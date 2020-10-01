@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import cs.example.csdemo.dto.Customer;
 import cs.example.csdemo.dto.CustomerResponseDTO;
+import cs.example.csdemo.exception.CustomException;
 import cs.example.csdemo.service.CustomerService;
 
 import java.util.Date;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController()
 @RequestMapping("/customers")
+@Validated
 public class CustomerController {
 
 	@Autowired
@@ -38,7 +41,7 @@ public class CustomerController {
 	}
 	
 	@GetMapping(params = "personalId")
-	public ResponseEntity<?> getCustomer(@RequestParam(value = "personalId") String personalId) {
+	public ResponseEntity<?> getCustomer(@RequestParam(value = "personalId")  @Length(max = 13,min = 13, message = "personalId: length must be between {min} and {max}") String personalId) {
 		Optional<Customer> customer = customerService.retrieveCustomer(personalId);
 		if (!customer.isPresent()) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Not found customer for ID:" + personalId);
@@ -68,7 +71,7 @@ public class CustomerController {
 		Optional<Customer> customer = customerService.updateCustomer(personalId, request);
 		CustomerResponseDTO responseDTO = new CustomerResponseDTO();
 		if (!customer.isPresent()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Not found customer for ID:" + personalId);
+			throw new CustomException("Not found","Not found customer for ID:" + personalId);
 		}
 		responseDTO.setTxnId(UUID.randomUUID());
 		responseDTO.setTimestamp(new Date());
@@ -82,7 +85,7 @@ public class CustomerController {
 	public ResponseEntity<?> deleteCustomer(@PathVariable String personalId) {
 		CustomerResponseDTO responseDTO = new CustomerResponseDTO();
 		if (!customerService.deleteCustomer(personalId)) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Not found customer for ID:" + personalId);
+			throw new CustomException("Not found","Not found customer for ID:" + personalId);
 		}
 		responseDTO.setTxnId(UUID.randomUUID());
 		responseDTO.setStatus("SUCCESS");
