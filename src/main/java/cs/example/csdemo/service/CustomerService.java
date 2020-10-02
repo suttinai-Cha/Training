@@ -1,33 +1,55 @@
 package cs.example.csdemo.service;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
-import javax.annotation.PostConstruct;
-
+import org.apache.commons.beanutils.PropertyUtilsBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 
 import cs.example.csdemo.dto.Customer;
+import cs.example.csdemo.entity.CustomerEntity;
+import cs.example.csdemo.repository.CustomerRepository;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 public class CustomerService {
 
-	protected Map<String, Customer> customers = new HashMap<String, Customer>();;
+	@Bean
+	PropertyUtilsBean getPropertyUtilsBean() {
+		return new PropertyUtilsBean();
+	};
+
+	@Autowired
+	CustomerRepository customerRepository;
 
 	public List<Customer> retrieveCustomer() {
-		return new ArrayList<Customer>(customers.values());
+		Iterable<CustomerEntity> customerEntity = customerRepository.findAll();
+		List<Customer> returnList = new ArrayList<Customer>();
+		customerEntity.forEach(orig -> {
+			Customer dest = new Customer();
+			try {
+				getPropertyUtilsBean().copyProperties(dest, orig);
+				returnList.add(dest);
+			} catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+				log.error(e.getMessage(), e);
+			}
+		});
+		return new ArrayList<Customer>(returnList);
 	}
 
 	public Optional<Customer> createCustomer(Customer request) throws Exception {
 		Optional<Customer> customerOptional = Optional.empty();
-		if (customers.containsKey(request.getPersonalId())) {
+		if (customerRepository.existsById(request.getPersonalId())) {
 			return customerOptional;
 		} else {
-			customers.put(request.getPersonalId(), request);
+			CustomerEntity persit = new CustomerEntity();
+			getPropertyUtilsBean().copyProperties(persit, request);
+			persit = customerRepository.save(persit);
 			customerOptional = Optional.of(request);
 			return customerOptional;
 		}
@@ -35,11 +57,12 @@ public class CustomerService {
 
 	public Optional<Customer> updateCustomer(String personalId, Customer request) throws Exception {
 		Optional<Customer> customerOptional = Optional.empty();
-		if (!customers.containsKey(personalId)) {
+		if (!customerRepository.existsById(request.getPersonalId())) {
 			return customerOptional;
 		} else {
-			customers.remove(personalId);
-			customers.put(request.getPersonalId(), request);
+			CustomerEntity persit = new CustomerEntity();
+			getPropertyUtilsBean().copyProperties(persit, request);
+			persit = customerRepository.save(persit);
 			customerOptional = Optional.of(request);
 			return customerOptional;
 		}
@@ -47,20 +70,27 @@ public class CustomerService {
 	}
 
 	public boolean deleteCustomer(String personalId) {
-		if (!customers.containsKey(personalId)) {
+		if (!customerRepository.existsById(personalId)) {
 			return false;
 		} else {
-			customers.remove(personalId);
+			customerRepository.deleteById(personalId);
 			return true;
 		}
 	}
 
 	public Optional<Customer> retrieveCustomer(String personalId) {
 		Optional<Customer> customerOptional = Optional.empty();
-		if (!customers.containsKey(personalId)) {
+		if (!customerRepository.existsById(personalId)) {
 			return customerOptional;
 		} else {
-			customerOptional = Optional.of(customers.get(personalId));
+			Optional<CustomerEntity> entityObj = customerRepository.findById(personalId);
+			Customer returnCustomer = new Customer();
+			try {
+				getPropertyUtilsBean().copyProperties(returnCustomer, entityObj.get());
+			} catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+				e.printStackTrace();
+			}
+			customerOptional = Optional.of(returnCustomer);
 			return customerOptional;
 		}
 	}

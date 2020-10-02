@@ -6,6 +6,8 @@ package cs.example.csdemo.dto;
 
 import java.util.Date;
 
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -37,7 +39,8 @@ public class Customer {
 	private String personalId;
 	
 	@JsonProperty("birth_date")
-	@JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy/MM/dd")
+	@JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd", timezone = "Asia/Bangkok")
+    @Temporal(TemporalType.DATE)
 	private Date birthDate;
 	
 
