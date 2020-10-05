@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import cs.example.csdemo.dto.Customer;
 import cs.example.csdemo.dto.CustomerResponseDTO;
+import cs.example.csdemo.dto.ResultList;
 import cs.example.csdemo.exception.CustomException;
 import cs.example.csdemo.service.CustomerService;
 
@@ -49,6 +50,15 @@ public class CustomerController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(customer);
 	}
 	
+	@GetMapping(params = "name")
+	public List<Customer> getCustomerByname(@RequestParam(value = "name")  String name) {
+		return customerService.retrieveCustomerByname(name);
+	}
+	
+	@GetMapping(params = {"name","pageNumber","pagSize"})
+	public ResultList<Customer> getCustomerByname(@RequestParam(value = "name")  String name,@RequestParam(value = "pageNumber")  Integer pageNumber,@RequestParam(value = "pagSize")  Integer pageSize) {
+		return customerService.retrieveCustomerBynamePagination(name,pageNumber,pageSize);
+	}
 	@PostMapping(produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> addustomer(@Validated @RequestBody Customer request) throws Exception {
 		Optional<Customer> customer = customerService.createCustomer(request);
