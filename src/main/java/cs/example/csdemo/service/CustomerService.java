@@ -1,6 +1,7 @@
 package cs.example.csdemo.service;
 
 import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -10,6 +11,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 
+import cs.example.csdemo.client.CustomRestClientTemplate;
+import cs.example.csdemo.client.dto.SendEmailRequest;
+import cs.example.csdemo.client.dto.SendEmailResponse;
+import cs.example.csdemo.config.InternalConfig;
 import cs.example.csdemo.dto.Customer;
 import cs.example.csdemo.dto.ResultList;
 import cs.example.csdemo.entity.CustomerEntity;
@@ -29,10 +34,11 @@ public class CustomerService {
 	@Autowired
 	IcustomerRepository icustomerRepository;
 
-
 	@Autowired
 	CustomerRepository customerRepository;
-	
+
+	@Autowired 
+	InternalConfig config;
 	public List<Customer> retrieveCustomer() {
 		Iterable<CustomerEntity> customerResult = icustomerRepository.findAll();
 		List<Customer> returnList = new ArrayList<Customer>();
@@ -47,6 +53,7 @@ public class CustomerService {
 		});
 		return new ArrayList<Customer>(returnList);
 	}
+
 	public List<Customer> retrieveCustomerByname(String name) {
 		Iterable<CustomerEntity> customerEntity = customerRepository.getAllByName(name);
 		List<Customer> returnList = new ArrayList<Customer>();
@@ -61,6 +68,10 @@ public class CustomerService {
 		});
 		return new ArrayList<Customer>(returnList);
 	}
+
+	@Autowired
+	CustomRestClientTemplate restClient;
+
 	public Optional<Customer> createCustomer(Customer request) throws Exception {
 		Optional<Customer> customerOptional = Optional.empty();
 		if (icustomerRepository.existsById(request.getPersonalId())) {
@@ -70,7 +81,20 @@ public class CustomerService {
 			getPropertyUtilsBean().copyProperties(persit, request);
 			persit = icustomerRepository.save(persit);
 			customerOptional = Optional.of(request);
+			sendEmail(persit.getPersonalId());
 			return customerOptional;
+		}
+	}
+
+	private void sendEmail(String personalId) {
+		try {
+			SendEmailRequest sendMailReq = new SendEmailRequest();
+			sendMailReq.setPersonalId(personalId);
+			restClient.postForEntity(new URI(config.getSendEmailUrl()),
+					sendMailReq, SendEmailResponse.class);
+		} catch (Exception e) {
+			//TODO something
+			log.error(e.getMessage(),e);
 		}
 	}
 
@@ -114,8 +138,10 @@ public class CustomerService {
 			return customerOptional;
 		}
 	}
+
 	public ResultList<Customer> retrieveCustomerBynamePagination(String name, Integer pageNumber, Integer pageSize) {
-		ResultList<CustomerEntity>customerEntity = customerRepository.getAllByNamePagination(name, pageNumber, pageSize);
+		ResultList<CustomerEntity> customerEntity = customerRepository.getAllByNamePagination(name, pageNumber,
+				pageSize);
 		List<Customer> returnList = new ArrayList<Customer>();
 		customerEntity.getResult().forEach(orig -> {
 			Customer dest = new Customer();
