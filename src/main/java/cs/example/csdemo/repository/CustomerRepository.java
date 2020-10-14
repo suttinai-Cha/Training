@@ -15,8 +15,10 @@ import org.springframework.stereotype.Repository;
 
 import cs.example.csdemo.dto.ResultList;
 import cs.example.csdemo.entity.CustomerEntity;
+import lombok.extern.slf4j.Slf4j;
 
 @Repository
+@Slf4j
 public class CustomerRepository {
 
 	// @PersistenceContext บอกให้ JavaEE Container Inject EntityManager มาให้เรา
@@ -39,7 +41,6 @@ public class CustomerRepository {
 
 	// use createQuery
 	public ResultList<CustomerEntity> getAllByNamePagination(String name, int pageNumber, int pageSize) {
-
 		CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
 		CriteriaQuery<Long> countQuery = criteriaBuilder.createQuery(Long.class);
 		countQuery.select(criteriaBuilder.count(countQuery.from(CustomerEntity.class)));
@@ -55,7 +56,7 @@ public class CustomerRepository {
 		TypedQuery<CustomerEntity> typedQuery = em.createQuery(select);
 		typedQuery.setFirstResult(pageSize * (pageNumber - 1));
 		typedQuery.setMaxResults(pageSize);
-		System.out.println("Current page: " + typedQuery.getResultList());
+		log.info("Current page: " + typedQuery.getResultList());
 		ResultList<CustomerEntity> resultSet = new ResultList<CustomerEntity>();
 		resultSet.setResult(typedQuery.getResultList());
 		resultSet.setPageNumber(pageNumber);

@@ -19,25 +19,25 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "tbl_customer")
+@Table(name = "TBL_CUSTOMER")
 @NamedQueries({ 
 	@NamedQuery(name = "customer.get-all-by-name", 
 			query = "select cus from CustomerEntity cus where cus.name like :NAME ") })
 public class CustomerEntity {
-	@Column(name = "firstname")
+	@Column(name = "FIRSTNAME")
 	@Length(max = 50)
 	private String name;
 
-	@Column(name = "lastname")
+	@Column(name = "LASTNAME")
 	@Length(max = 50)
 	private String lastname;
 
 	@Id
-	@Column(name = "personal_id")
+	@Column(name = "PERSONAL_ID")
 	@Length(max = 13, min = 13)
 	private String personalId;
 
-	@Column(name = "birth_date")
+	@Column(name = "BIRTH_DATE")
 	@JsonFormat(pattern = "yyyy-MM-dd", timezone = "Asia/Bangkok")
 	@Temporal(TemporalType.DATE)
 	private Date birthDate;

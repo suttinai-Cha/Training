@@ -20,6 +20,7 @@ import cs.example.csdemo.dto.ResultList;
 import cs.example.csdemo.entity.CustomerEntity;
 import cs.example.csdemo.repository.CustomerRepository;
 import cs.example.csdemo.repository.IcustomerRepository;
+import cs.example.csdemo.utils.Constraint.LogType;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -36,6 +37,9 @@ public class CustomerService {
 
 	@Autowired
 	CustomerRepository customerRepository;
+	
+	@Autowired
+	LoggingService logService; 
 
 	@Autowired 
 	InternalConfig config;
@@ -75,17 +79,20 @@ public class CustomerService {
 	public Optional<Customer> createCustomer(Customer request) throws Exception {
 		Optional<Customer> customerOptional = Optional.empty();
 		if (icustomerRepository.existsById(request.getPersonalId())) {
+			logService.insertlog("PersonalId: "+request.getPersonalId()+" is dupplicate", LogType.WARNING);
 			return customerOptional;
 		} else {
 			CustomerEntity persit = new CustomerEntity();
 			getPropertyUtilsBean().copyProperties(persit, request);
 			persit = icustomerRepository.save(persit);
 			customerOptional = Optional.of(request);
+			logService.insertlog("Insert: "+persit.getPersonalId()+" Success", LogType.INFO);
 			sendEmail(persit.getPersonalId());
 			return customerOptional;
 		}
 	}
 
+	//call another service
 	private void sendEmail(String personalId) {
 		try {
 			SendEmailRequest sendMailReq = new SendEmailRequest();
